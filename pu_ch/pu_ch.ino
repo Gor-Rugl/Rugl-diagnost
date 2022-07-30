@@ -6,8 +6,8 @@ MAX30105 PARTICLE_SENSOR;   //  Создаём объект для работы 
 #include <FirebaseArduino.h> 
 #define  FIREBASE_HOST "bpm-so2p-android-studio-default-rtdb.firebaseio.com"
 #define  FIREBASE_AUTH "MfpXxLrtGqssaQKPIk95Vd1kWChPsSI5fCE0e0rV"
-#define WIFI_SSID "Bratsk_5" //provide ssid (wifi name)
-#define WIFI_PASSWORD "$c*Wi-SdOP!2745" //wifi password
+#define WIFI_SSID "B*****_5" //provide ssid (wifi name)
+#define WIFI_PASSWORD "$************45" //wifi password
 
 //--------------------------//
 long lastBeat = 0;          //  Время последнего зафиксированного удара
