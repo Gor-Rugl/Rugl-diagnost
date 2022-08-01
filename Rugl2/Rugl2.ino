@@ -9,15 +9,17 @@ MAX30105 PARTICLE_SENSOR;                           //  Создаём объе�
 #include <FirebaseArduino.h> 
 #define  FIREBASE_HOST "bpm-so2p-android-studio-default-rtdb.firebaseio.com"
 #define  FIREBASE_AUTH "MfpXxLrtGqssaQKPIk95Vd1kWChPsSI5fCE0e0rV"
-#define WIFI_SSID "RuGl_bin2" //provide ssid (wifi name)
-#define WIFI_PASSWORD "Wi-283!-283" //wifi password
+#define WIFI_SSID "Bratsk_5" //provide ssid (wifi name)
+#define WIFI_PASSWORD "$c*Wi-SdOP!2745" //wifi password
+//#define WIFI_SSID "RuGl_bin2" //provide ssid (wifi name)
+//#define WIFI_PASSWORD "Wi-283!-283" //wifi password
 //--------------------------------------------------//
 long lastBeat = 0;          //  Время последнего зафиксированного удара
 float beatsPerMinute;       //  Создаём переменную для хранения значения ЧСС
 int beatsPerMinut;
 uint32_t irBuffer[25];                             //  16-битный массив данных от сенсора со значениями от ИК-светодиода
 uint32_t redBuffer[25];                            //  16-битный массив данных от сенсора со значениями от красного светодиода
-
+String sost[5]={"on","Conecting...","Conect","Fir con","Got ism"};
 //--------------------------------------------------//
 int32_t bufferLength;                               //  длина буфера данных
 int32_t spo2;                                       //  значение SpO2 (насыщенности крови кислородом)
@@ -69,35 +71,50 @@ void spo(){
 //----------------------------------------------------//
 void setup() {
   Serial.begin(9600); 
+  Serial.setTimeout(100);
   delay(200);
+  SendData("log.t1.txt","\""+String(sost[0])+"\"");
+  delay(100);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-    while (WiFi.status() != WL_CONNECTED) {
+  delay(200);
+  SendData("log.t1.txt","\""+String(sost[1])+"\"");
+  delay(100);
+    while (WiFi.status() != WL_CONNECTED) { 
     delay(500);
   }
+  SendData("log.t1.txt","\""+String(sost[2])+"\"");
   Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
+  SendData("log.t1.txt","\""+String(sost[3])+"\"");
    //  инициируем работу с монитором последовательного порта на скорости 115200 бод
   if (!PARTICLE_SENSOR.begin()) {                   //  инициируем работу с сенсором. Если этого не произошло, то
     while (1);                                      //  останавливаем дальнейшее выполнение скетча
   }
-
+  
 //  PARTICLE_SENSOR.setup(60, 4, 2, 100, 411, 4096);
   PARTICLE_SENSOR.setup(); 
   PARTICLE_SENSOR.setPulseAmplitudeRed(0x0A);         //  Выключаем КРАСНЫЙ светодиод для того, чтобы модуль начал работу
   PARTICLE_SENSOR.setPulseAmplitudeGreen(0);          //  Выключаем ЗЕЛЁНЫЙ светодиод 
-PARTICLE_SENSOR.enableDIETEMPRDY();
- 
+  PARTICLE_SENSOR.enableDIETEMPRDY();
+ SendData("log.t1.txt","\""+String(sost[4])+"\"");
+
 }
 //----------------------------------------------------//
 void loop() {
-
- spo();
+if(Serial.available()>0){
+  if(Serial.readString()=="w")Firebase.setString("pol", "women");
+  else Firebase.setString("pol", "men");
+}
+while(spo2<80) spo();
+SendData("log.t1.txt","s");
 while(beatsPerMinut<30)puls();
-if(spo2>50 && beatsPerMinut>30){
-int te=PARTICLE_SENSOR.readTemperature();
- Firebase.setString("Sensor", String(beatsPerMinut));
+SendData("log.t1.txt","s p");
+//if(spo2>80 && beatsPerMinut>30){
+float te=(PARTICLE_SENSOR.readTemperature());
+  Firebase.setString("Sensor", String(beatsPerMinut));
  SendData("log.pu.txt","\""+String(beatsPerMinut)+"\"");
- Firebase.setString("Sensor3",String(te));
-  SendData("log.kg.txt","\""+String(te)+"\"");
- Firebase.setString("Sensor2",String(spo2));
+  Firebase.setString("Sensor2",String(spo2));
  SendData("log.sp.txt","\""+String(spo2)+"%"+"\"");
-  }}
+  Firebase.setString("Sensor3",String(te,0));
+ SendData("log.kg.txt","\""+String(te,1)+"\"");
+  }
+//}
