@@ -19,7 +19,7 @@ float beatsPerMinute;       //  Создаём переменную для хр�
 int beatsPerMinut;
 uint32_t irBuffer[25];                             //  16-битный массив данных от сенсора со значениями от ИК-светодиода
 uint32_t redBuffer[25];                            //  16-битный массив данных от сенсора со значениями от красного светодиода
-String sost[5]={"on","Conecting...","Conect","Fir con","Got ism"};
+String sost[7]={"on","Conecting...","Conect","Fir con","Got ism","s","s p"};
 //--------------------------------------------------//
 int32_t bufferLength;                               //  длина буфера данных
 int32_t spo2;                                       //  значение SpO2 (насыщенности крови кислородом)
@@ -73,10 +73,9 @@ void setup() {
   Serial.begin(9600); 
   Serial.setTimeout(100);
   delay(200);
-  SendData("log.t1.txt","\""+String(sost[0])+"\"");
-  delay(100);
+
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  delay(200);
+  delay(300);
   SendData("log.t1.txt","\""+String(sost[1])+"\"");
   delay(100);
     while (WiFi.status() != WL_CONNECTED) { 
@@ -105,9 +104,9 @@ if(Serial.available()>0){
   else Firebase.setString("pol", "men");
 }
 while(spo2<80) spo();
-SendData("log.t1.txt","s");
+SendData("log.t1.txt","\""+String(sost[5])+"\"");
 while(beatsPerMinut<30)puls();
-SendData("log.t1.txt","s p");
+SendData("log.t1.txt","\""+String(sost[6])+"\"");
 //if(spo2>80 && beatsPerMinut>30){
 float te=(PARTICLE_SENSOR.readTemperature());
   Firebase.setString("Sensor", String(beatsPerMinut));
