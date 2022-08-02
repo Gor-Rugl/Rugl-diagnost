@@ -19,8 +19,8 @@ float beatsPerMinute;                               //  Создаём пере�
 int beatsPerMinut;
 uint32_t irBuffer[25];                              //  32-битный массив данных от сенсора со значениями от ИК-светодиода
 uint32_t redBuffer[25];                             //  32-битный массив данных от сенсора со значениями от красного светодиода
-String sost[7]={"on","Conecting...","Conect","Fir con","Got ism","s","s p"};    // Переменная с состояними подкючения
-String pol;
+String sost[8]={"on","Conecting...","Conect","Fir con","Got ism","s","s p","clicking?"};    // Переменная с состояними подкючения
+String pol="men";
 //--------------------------------------------------//
 int32_t bufferLength;                               //  длина буфера данных
 int32_t spo2;                                       //  значение SpO2 (насыщенности крови кислородом)
@@ -80,11 +80,12 @@ void setup() {
   SendData("zg.t1.txt","\""+String(sost[1])+"\"");
   delay(100);
     while (WiFi.status() != WL_CONNECTED) { 
-    delay(500);
+    delay(300);
   }
   Serial.print("page log");comandEnd();               //Переходим на главную страницу
   Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
   SendData("log.t1.txt","\""+String(sost[3])+"\"");
+  delay(500);
   if (!PARTICLE_SENSOR.begin()) {                     //  инициируем работу с сенсором. Если этого не произошло, то
     while (1);                                        //  останавливаем дальнейшее выполнение скетча
   }
@@ -94,21 +95,25 @@ void setup() {
   PARTICLE_SENSOR.setPulseAmplitudeRed(0x0A);         //  Выключаем КРАСНЫЙ светодиод для того, чтобы модуль начал работу
   PARTICLE_SENSOR.setPulseAmplitudeGreen(0);          //  Выключаем ЗЕЛЁНЫЙ светодиод 
   PARTICLE_SENSOR.enableDIETEMPRDY();                 //Подключаем считывание температуры
- SendData("log.t1.txt","\""+String(sost[4])+"\"");
-
+ SendData("log.t1.txt","\""+String(sost[7])+"\"");
+Serial.readString();
 }
 //----------------------------------------------------//
 void loop() {
+  //----------------------------------------------------//
 if(Serial.available()>0){
-  if(Serial.readString()=="w")pol="women";
-  else pol="men";
-}
-do spo(); while(spo2<80);
+ String pul = Serial.readString();
+  if(pul=="h1"){pol="women";}
+  else if(pul=="h0") {pol="men";}
+  else {pol="err";}
+  //----------------------------------------------------//
+SendData("log.t1.txt","\""+String(sost[4])+"\"");
+while(spo2<80)spo();
 SendData("log.t1.txt","\""+String(sost[5])+"\"");
-do puls(); while(beatsPerMinut<30);
+while(beatsPerMinut<30)puls();
 SendData("log.t1.txt","\""+String(sost[6])+"\"");
 //if(spo2>80 && beatsPerMinut>30){
-float te=(PARTICLE_SENSOR.readTemperature()+1.9);
+float te=(PARTICLE_SENSOR.readTemperature()+2.4);
   Firebase.setString("Sensor", String(beatsPerMinut));
  SendData("log.pu.txt","\""+String(beatsPerMinut)+"\"");
   Firebase.setString("Sensor2",String(spo2));
@@ -116,7 +121,5 @@ float te=(PARTICLE_SENSOR.readTemperature()+1.9);
   Firebase.setString("Sensor3",String(te,0));
  SendData("log.kg.txt","\""+String(te,1)+"\"");
  Firebase.setString("pol", String(pol));
-// spo2=0;
- //beatsPerMinut=0;
-  }
-//}
+ beatsPerMinut=0;
+}}
