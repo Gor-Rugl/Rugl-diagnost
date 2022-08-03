@@ -1,12 +1,15 @@
-#define  MAX_BRIGHTNESS 255                         //  Задаём переменную максимальной яркости свечения светодиода
-//--------------------------------------------------//
+#include <SoftwareSerial.h>
 #include "Wire.h"                                   //  Подключаем библиотеку для работы с шиной I2C
 #include "MAX30105.h"                               //  Подключаем библиотеку для работы с модулем
 #include "spo2_algorithm.h"                         //  Подключаем блок работы с насыщением крови кислородом
 #include "heartRate.h"                              //  Подключаем блок для работы с ЧСС (пульс)
 MAX30105 PARTICLE_SENSOR;                           //  Создаём объект для работы с библиотекой
+SoftwareSerial mySerial(D5,D6);
+
 #include <ESP8266WiFi.h>                            // esp8266 library
 #include <FirebaseArduino.h> 
+//--------------------------------------------------//
+#define  MAX_BRIGHTNESS 255                         //  Задаём переменную максимальной яркости свечения светодиода
 #define  FIREBASE_HOST "bpm-so2p-android-studio-default-rtdb.firebaseio.com"    // адрес сайта firebase
 #define  FIREBASE_AUTH "MfpXxLrtGqssaQKPIk95Vd1kWChPsSI5fCE0e0rV"               // ключ доступа
 #define WIFI_SSID "Bratsk_5"                                                    //provide ssid (wifi name)           
@@ -30,9 +33,9 @@ int8_t  validHeartRate;                             //  флаг валидно�
 //--------------------------------------------------//
 void SendData(String dev, String data)
 {
-  Serial.print(dev);                                // Отправляем данные dev(номер экрана, название переменной) на Nextion
-  Serial.print("=");                                // Отправляем данные =(знак равно, далее передаем сами данные) на Nextion 
-  Serial.print(data);                               // Отправляем данные data(данные) на Nextion
+  mySerial.print(dev);                                // Отправляем данные dev(номер экрана, название переменной) на Nextion
+  mySerial.print("=");                                // Отправляем данные =(знак равно, далее передаем сами данные) на Nextion 
+  mySerial.print(data);                               // Отправляем данные data(данные) на Nextion
   comandEnd();
   dev = "";                                         // Очищаем переменную
   data = "";                                        // Очищаем переменную
@@ -41,7 +44,7 @@ void SendData(String dev, String data)
 void comandEnd()
 {
   for (int i = 0; i < 3; i++) {
-    Serial.write(0xff);}
+    mySerial.write(0xff);}
 }
 //----------------------------------------------------//
 void puls(){
@@ -71,8 +74,8 @@ void spo(){
 }
 //----------------------------------------------------//
 void setup() {
-  Serial.begin(9600);                                 //Устанавливаем скорость обмена данными с дисплеем
-  Serial.setTimeout(100);                             //Устанавливаем время ожидание получения ответа стандарт(1000)
+  mySerial.begin(9600);                                 //Устанавливаем скорость обмена данными с дисплеем
+  mySerial.setTimeout(100);                             //Устанавливаем время ожидание получения ответа стандарт(1000)
   delay(200);
 
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);               //Производим подключение к WiFi сети
@@ -82,7 +85,7 @@ void setup() {
     while (WiFi.status() != WL_CONNECTED) { 
     delay(300);
   }
-  Serial.print("page log");comandEnd();               //Переходим на главную страницу
+  mySerial.print("page log");comandEnd();               //Переходим на главную страницу
   Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
   SendData("log.t1.txt","\""+String(sost[3])+"\"");
   delay(500);
@@ -96,24 +99,24 @@ void setup() {
   PARTICLE_SENSOR.setPulseAmplitudeGreen(0);          //  Выключаем ЗЕЛЁНЫЙ светодиод 
   PARTICLE_SENSOR.enableDIETEMPRDY();                 //Подключаем считывание температуры
  SendData("log.t1.txt","\""+String(sost[7])+"\"");
-Serial.readString();
+mySerial.readString();
 }
 //----------------------------------------------------//
 void loop() {
   //----------------------------------------------------//
-if(Serial.available()>0){
- String pul = Serial.readString();
+if(mySerial.available()>0){
+ String pul = mySerial.readString();
   if(pul=="h1"){pol="women";}
   else if(pul=="h0") {pol="men";}
   else {pol="err";}
   //----------------------------------------------------//
 SendData("log.t1.txt","\""+String(sost[4])+"\"");
-while(spo2<80)spo();
+while(spo2<87)spo();
 SendData("log.t1.txt","\""+String(sost[5])+"\"");
 while(beatsPerMinut<30)puls();
 SendData("log.t1.txt","\""+String(sost[6])+"\"");
-//if(spo2>80 && beatsPerMinut>30){
-float te=(PARTICLE_SENSOR.readTemperature()+2.4);
+//if(spo2>87 && beatsPerMinut>30){
+float te=(PARTICLE_SENSOR.readTemperature()+1.4);
   Firebase.setString("Sensor", String(beatsPerMinut));
  SendData("log.pu.txt","\""+String(beatsPerMinut)+"\"");
   Firebase.setString("Sensor2",String(spo2));
@@ -122,4 +125,5 @@ float te=(PARTICLE_SENSOR.readTemperature()+2.4);
  SendData("log.kg.txt","\""+String(te,1)+"\"");
  Firebase.setString("pol", String(pol));
  beatsPerMinut=0;
+ spo2-=13;
 }}
