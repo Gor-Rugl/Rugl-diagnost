@@ -100,6 +100,7 @@ void setup() {
   PARTICLE_SENSOR.enableDIETEMPRDY();                 //Подключаем считывание температуры
  SendData("log.t1.txt","\""+String(sost[7])+"\"");
 mySerial.readString();
+                                                              //Serial.parseFloat() Возможность корректеровки коефа темп
 }
 //----------------------------------------------------//
 void loop() {
@@ -116,14 +117,18 @@ SendData("log.t1.txt","\""+String(sost[5])+"\"");
 while(beatsPerMinut<30)puls();
 SendData("log.t1.txt","\""+String(sost[6])+"\"");
 //if(spo2>87 && beatsPerMinut>30){
-float te=(PARTICLE_SENSOR.readTemperature()+1.4);
-  Firebase.setString("Sensor", String(beatsPerMinut));
- SendData("log.pu.txt","\""+String(beatsPerMinut)+"\"");
-  Firebase.setString("Sensor2",String(spo2));
+float te=PARTICLE_SENSOR.readTemperature();
+
+
+ SendData("log.pu.txt","\""+String(beatsPerMinut)+"\"");// Вывод на дисплей
  SendData("log.sp.txt","\""+String(spo2)+"%"+"\"");
-  Firebase.setString("Sensor3",String(te,0));
  SendData("log.kg.txt","\""+String(te,1)+"\"");
+ 
+ Firebase.setString("Sensor", String(beatsPerMinut));//Вывод в базу
+ Firebase.setString("Sensor2",String(spo2));
+ Firebase.setString("Sensor3",String(te,0));
  Firebase.setString("pol", String(pol));
+ 
  beatsPerMinut=0;
- spo2-=13;
+ spo2=0;
 }}
