@@ -1,22 +1,42 @@
+/*
+Библиотека Firebase Arduino содержит ссылку на отпечаток пальца SSL-сертификата Firebase. Этот отпечаток пальца может не совпадать с текущим отпечатком пальца.
+Этот отпечаток пальца находится в FirebaseHttpClient.h (обычно в C:\Users\<User>\Documents\Arduino\libraries\firebase-arduino-<version>\src\FirebaseHttpClient.h).
+Чтобы найти и изменить текущий отпечаток пальца:
+Перейти к https://www.grc.com/fingerprints.htm
+Войти "test.firebaseio.com "
+Запишите отпечаток пальца (например, в данный момент он 03:9E:4F:E6:83:FC:40:EF:FC:B2:C5:EF:36:0E:7C:3C:42:20:1B:8F
+ОткрытьC:\Users\<User>\Documents\Arduino\libraries\firebase-arduino-<version>\src\FirebaseHttpClient.h
+Заменить значение kFirebaseFingerprint с отпечатком пальца (без двоеточий)
+Перекомпилировать
+
+*/
+
+// Ссылка для менеджера плат:
+// http://arduino.esp8266.com/stable/package_esp8266com_index.json
+
+// Для WEMOS выбираем плату LOLIN(WEMOS) D1 R2 & mini
+// Для NodeMCU выбираем NodeMCU 1.0 (ESP-12E Module)
+#include <OneWire.h>
+#include <DallasTemperature.h>
 #include <SoftwareSerial.h>
 #include "Wire.h"                                   //  Подключаем библиотеку для работы с шиной I2C
 #include "MAX30105.h"                               //  Подключаем библиотеку для работы с модулем
 #include "spo2_algorithm.h"                         //  Подключаем блок работы с насыщением крови кислородом
 #include "heartRate.h"                              //  Подключаем блок для работы с ЧСС (пульс)
-MAX30105 PARTICLE_SENSOR;                           //  Создаём объект для работы с библиотекой
-SoftwareSerial mySerial(D5,D6);
 
 #include <ESP8266WiFi.h>                            // esp8266 library
-#include <FirebaseArduino.h> 
+#include <FirebaseArduino.h>                        // Библиотека для работы с базой данных
 //--------------------------------------------------//
 #define  MAX_BRIGHTNESS 255                         //  Задаём переменную максимальной яркости свечения светодиода
+//#define WIFI_SSID "Bratsk_5"                                                    //provide ssid (wifi name)           
+//#define WIFI_PASSWORD "$c*Wi-SdOP!2745"                                         //wifi password
 #define  FIREBASE_HOST "bpm-so2p-android-studio-default-rtdb.firebaseio.com"    // адрес сайта firebase
 #define  FIREBASE_AUTH "MfpXxLrtGqssaQKPIk95Vd1kWChPsSI5fCE0e0rV"               // ключ доступа
-#define WIFI_SSID "Bratsk_5"                                                    //provide ssid (wifi name)           
-#define WIFI_PASSWORD "$c*Wi-SdOP!2745"                                         //wifi password
-//#define WIFI_SSID "RuGl_bin2"                                                 //provide ssid (wifi name)
-//#define WIFI_PASSWORD "Wi-283!-283"                                           //wifi password
+#define WIFI_SSID "Rugl2"                                                 //provide ssid (wifi name)
+#define WIFI_PASSWORD "Wi-12345678"                                           //wifi password
+#define ONE_WIRE_BUS 0
 //--------------------------------------------------//
+float te,raw;                                       // Переменные для температуры
 long lastBeat = 0;                                  //  Время последнего зафиксированного удара
 float beatsPerMinute;                               //  Создаём переменную для хранения значения ЧСС
 int beatsPerMinut;
@@ -24,6 +44,11 @@ uint32_t irBuffer[25];                              //  32-битный масс
 uint32_t redBuffer[25];                             //  32-битный массив данных от сенсора со значениями от красного светодиода
 String sost[8]={"on","Conecting...","Conect","Fir con","Got ism","s","s p","clicking?"};    // Переменная с состояними подкючения
 String pol="men";
+
+MAX30105 PARTICLE_SENSOR;                           //  Создаём объект для работы с библиотекой
+SoftwareSerial mySerial(D5,D6);
+OneWire oneWire(ONE_WIRE_BUS);
+DallasTemperature sensors(&oneWire);
 //--------------------------------------------------//
 int32_t bufferLength;                               //  длина буфера данных
 int32_t spo2;                                       //  значение SpO2 (насыщенности крови кислородом)
@@ -44,7 +69,7 @@ void SendData(String dev, String data)
 void comandEnd()
 {
   for (int i = 0; i < 3; i++) {
-    mySerial.write(0xff);}
+    mySerial.write(0xff);}                            //Завершение команд дисплею
 }
 //----------------------------------------------------//
 void puls(){
@@ -97,10 +122,9 @@ void setup() {
   PARTICLE_SENSOR.setup(); 
   PARTICLE_SENSOR.setPulseAmplitudeRed(0x0A);         //  Выключаем КРАСНЫЙ светодиод для того, чтобы модуль начал работу
   PARTICLE_SENSOR.setPulseAmplitudeGreen(0);          //  Выключаем ЗЕЛЁНЫЙ светодиод 
-  PARTICLE_SENSOR.enableDIETEMPRDY();                 //Подключаем считывание температуры
  SendData("log.t1.txt","\""+String(sost[7])+"\"");
 mySerial.readString();
-                                                              //Serial.parseFloat() Возможность корректеровки коефа темп
+                                                              //Очистка буфера
 }
 //----------------------------------------------------//
 void loop() {
@@ -109,15 +133,22 @@ if(mySerial.available()>0){
  String pul = mySerial.readString();
   if(pul=="h1"){pol="women";}
   else if(pul=="h0") {pol="men";}
-  else {pol="err";}
+  else {pol="err";}                                               //Считывание выбранного пола
   //----------------------------------------------------//
-SendData("log.t1.txt","\""+String(sost[4])+"\"");
+SendData("log.t1.txt","\""+String(sost[4])+"\"");                 //Определение SPO2
 while(spo2<87)spo();
-SendData("log.t1.txt","\""+String(sost[5])+"\"");
+SendData("log.t1.txt","\""+String(sost[5])+"\"");                 //Определение Пульса
 while(beatsPerMinut<30)puls();
 SendData("log.t1.txt","\""+String(sost[6])+"\"");
-//if(spo2>87 && beatsPerMinut>30){
-float te=PARTICLE_SENSOR.readTemperature();
+
+sensors.requestTemperatures();   
+te=sensors.getTempCByIndex(0);                                //Считывание температуры и присвоение к переменной
+if(te<30) te=36.4;
+else if(te>=30&&te<31) te+=5.4;
+else if(te>=31&&te<32) te+=4.2;
+else if(te>=32&&te<33) te+=3.3;
+else if(te>=33&&te<34) te+=2.1;
+else if(te>=34&&te<35) te+=1.6;
 
 
  SendData("log.pu.txt","\""+String(beatsPerMinut)+"\"");// Вывод на дисплей
