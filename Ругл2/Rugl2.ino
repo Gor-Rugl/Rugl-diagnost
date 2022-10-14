@@ -28,8 +28,6 @@
 #include <FirebaseArduino.h>                        // Библиотека для работы с базой данных
 //--------------------------------------------------//
 #define  MAX_BRIGHTNESS 255                         //  Задаём переменную максимальной яркости свечения светодиода
-//#define WIFI_SSID "Bratsk_5"                                                    //provide ssid (wifi name)           
-//#define WIFI_PASSWORD "$c*Wi-SdOP!2745"                                         //wifi password
 #define  FIREBASE_HOST "bpm-so2p-android-studio-default-rtdb.firebaseio.com"    // адрес сайта firebase
 #define  FIREBASE_AUTH "MfpXxLrtGqssaQKPIk95Vd1kWChPsSI5fCE0e0rV"               // ключ доступа
 #define WIFI_SSID "Rugl2"                                                 //provide ssid (wifi name)
@@ -143,12 +141,7 @@ SendData("log.t1.txt","\""+String(sost[6])+"\"");
 
 sensors.requestTemperatures();   
 te=sensors.getTempCByIndex(0);                                //Считывание температуры и присвоение к переменной
-if(te<30) te=36.4;
-else if(te>=30&&te<31) te+=5.4;
-else if(te>=31&&te<32) te+=4.2;
-else if(te>=32&&te<33) te+=3.3;
-else if(te>=33&&te<34) te+=2.1;
-else if(te>=34&&te<35) te+=1.6;
+
 
 
  SendData("log.pu.txt","\""+String(beatsPerMinut)+"\"");// Вывод на дисплей
